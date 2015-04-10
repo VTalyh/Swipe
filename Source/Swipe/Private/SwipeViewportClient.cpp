@@ -21,6 +21,8 @@ bool USwipeViewportClient::InputTouch(FViewport* InViewport,
 	switch (Type) {
 		case ETouchType::Began:
 		{
+			USwipeDelegates::TouchBeganDelegate.Broadcast(TouchLocation, Handle);
+
 			SwipeStartLocation = TouchLocation;
 			bSwiping = true;
 			SwipeDirection = Swipe::Direction::None;
@@ -28,6 +30,8 @@ bool USwipeViewportClient::InputTouch(FViewport* InViewport,
 		}
 		case ETouchType::Moved:
 		{
+			USwipeDelegates::TouchMovedDelegate.Broadcast(TouchLocation, Handle);
+
 			if (bSwiping && SwipeDirection == Swipe::Direction::None) {
 				FVector2D TouchDelta = TouchLocation - SwipeStartLocation;
 				const USwipeSettings* SwipeSettings = GetDefault<USwipeSettings>();
@@ -37,22 +41,24 @@ bool USwipeViewportClient::InputTouch(FViewport* InViewport,
 				bool YMeetsThreshold = (AbsY >= SwipeSettings->MinSwipeDistance);
 				
 				if (AbsX > AbsY && XMeetsThreshold) {
+					SwipeTriggerLocation = TouchLocation;
 					if (TouchDelta.X > 0) {
-						USwipeComponent::SwipeRightDelegate.Broadcast();
+						USwipeDelegates::SwipeRightDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation);
 						SwipeDirection = Swipe::Direction::Right;
 					}
 					else {
-						USwipeComponent::SwipeLeftDelegate.Broadcast();
+						USwipeDelegates::SwipeLeftDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation);
 						SwipeDirection = Swipe::Direction::Left;
 					}
 				}
 				else if (YMeetsThreshold) {
+					SwipeTriggerLocation = TouchLocation;
 					if (TouchDelta.Y > 0) {
-						USwipeComponent::SwipeDownDelegate.Broadcast();
+						USwipeDelegates::SwipeDownDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation);
 						SwipeDirection = Swipe::Direction::Down;
 					}
 					else {
-						USwipeComponent::SwipeUpDelegate.Broadcast();
+						USwipeDelegates::SwipeUpDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation);
 						SwipeDirection = Swipe::Direction::Up;
 					}
 				}
@@ -62,27 +68,29 @@ bool USwipeViewportClient::InputTouch(FViewport* InViewport,
 		}
 		case ETouchType::Ended:
 		{
+			USwipeDelegates::TouchEndedDelegate.Broadcast(TouchLocation, Handle);
+
 			bSwiping = false;
 			
 			switch (SwipeDirection) {
 				case Swipe::Direction::Right:
 				{
-					USwipeComponent::SwipeRightEndedDelegate.Broadcast();
+					USwipeDelegates::SwipeRightEndedDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation, TouchLocation);
 					break;
 				}
 				case Swipe::Direction::Left:
 				{
-					USwipeComponent::SwipeLeftEndedDelegate.Broadcast();
+					USwipeDelegates::SwipeLeftEndedDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation, TouchLocation);
 					break;
 				}
 				case Swipe::Direction::Down:
 				{
-					USwipeComponent::SwipeDownEndedDelegate.Broadcast();
+					USwipeDelegates::SwipeDownEndedDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation, TouchLocation);
 					break;
 				}
 				case Swipe::Direction::Up:
 				{
-					USwipeComponent::SwipeUpEndedDelegate.Broadcast();
+					USwipeDelegates::SwipeUpEndedDelegate.Broadcast(SwipeStartLocation, SwipeTriggerLocation, TouchLocation);
 					break;
 				}
 				default:
